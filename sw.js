@@ -1,15 +1,14 @@
-const CACHE_NAME = 'fluxi-cache-v1.5';
+const CACHE_NAME = 'fluxi-cache-v1.6';
+
+// Solo almacenamos en caché los archivos locales de tu repositorio
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './icon.svg',
-  'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://cdn.jsdelivr.net/npm/chart.js'
+  './icon.svg'
 ];
 
-// Instalar Service Worker y guardar en caché
+// Instalar Service Worker y guardar en caché local
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -20,9 +19,14 @@ self.addEventListener('install', (event) => {
 
 // Interceptar peticiones y servir desde caché si no hay red
 self.addEventListener('fetch', (event) => {
-  // Ignorar peticiones a Google Apps Script (esas siempre deben ir a internet)
-  if (event.request.url.includes('script.google.com')) {
-    return;
+  // Ignorar peticiones a Google Apps Script y CDNs externos (evita errores CORS en consola)
+  if (
+    event.request.url.includes('script.google.com') || 
+    event.request.url.includes('cdn.tailwindcss.com') ||
+    event.request.url.includes('cdnjs.cloudflare.com') ||
+    event.request.url.includes('cdn.jsdelivr.net')
+  ) {
+    return; // Deja que el navegador maneje estas peticiones normalmente
   }
 
   event.respondWith(
