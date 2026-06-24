@@ -3,122 +3,222 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Fluxi - Finanzas</title>
+  <title>Fluxi - Finanzas Pro</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0f172a">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="apple-touch-icon" href="icon.svg">
+  
   <script src="https://cdn.tailwindcss.com"></script>
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
-    body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-    ::-webkit-scrollbar { width: 0px; background: transparent; }
-    .modal-slide-up { transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease; }
-    .modal-hidden { transform: translateY(100%); opacity: 0; pointer-events: none; }
-    .modal-visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
-    .toast-slide-in { animation: slideInUp 0.3s ease-out; }
-    @keyframes slideInUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    body { 
+      touch-action: manipulation; 
+      -webkit-tap-highlight-color: transparent; 
+    }
+    ::-webkit-scrollbar { 
+      width: 0px; 
+      background: transparent; 
+    }
+    .modal-slide-up { 
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease; 
+    }
+    .modal-hidden { 
+      transform: translateY(100%); 
+      opacity: 0; 
+      pointer-events: none; 
+    }
+    .modal-visible { 
+      transform: translateY(0); 
+      opacity: 1; 
+      pointer-events: auto; 
+    }
+    .custom-toast {
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
   </style>
 </head>
 <body class="bg-black text-slate-100 h-screen w-screen overflow-hidden flex justify-center">
 
-  <div class="w-full max-w-md h-full bg-slate-900 flex flex-col relative shadow-2xl overflow-hidden">
+  <div class="w-full max-w-md h-full bg-slate-950 flex flex-col relative shadow-2xl overflow-hidden border-x border-slate-800/50">
     
-    <header class="flex-none flex justify-between items-center p-5 pt-6 bg-slate-900 z-10">
+    <div id="toast-container" class="absolute top-5 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-xs space-y-2 pointer-events-none"></div>
+
+    <div id="custom-confirm" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[90] flex items-center justify-center p-6 transition-all duration-200">
+      <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl w-full max-w-xs text-center space-y-4 shadow-2xl">
+        <div class="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto text-rose-400 text-lg">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="space-y-1">
+          <h3 class="font-extrabold text-sm text-slate-100" id="confirm-title">¿Confirmar acción?</h3>
+          <p class="text-xs text-slate-400" id="confirm-desc">Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button id="confirm-cancel-btn" class="py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold text-xs rounded-xl transition">Cancelar</button>
+          <button id="confirm-accept-btn" class="py-2.5 bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs rounded-xl transition">Eliminar</button>
+        </div>
+      </div>
+    </div>
+
+    <header class="flex-none flex justify-between items-center p-5 pt-6 bg-slate-950/80 backdrop-blur-md border-b border-slate-900 z-10">
       <div class="flex items-center gap-2">
         <div class="bg-emerald-500/10 p-2 rounded-xl border border-emerald-500/20">
           <i class="fa-solid fa-bolt text-emerald-400 text-xl"></i>
         </div>
         <h1 class="text-2xl font-black tracking-tight text-white">Fluxi</h1>
       </div>
-      <span id="status" class="text-[10px] uppercase tracking-wider font-extrabold bg-slate-800 text-emerald-400 px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer" onclick="forzarSincronizacion()">
+      <span id="status" class="text-[10px] uppercase tracking-wider font-extrabold bg-slate-900 text-emerald-400 px-3 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer border border-slate-800/60" onclick="forzarSincronizacion()">
         <i class="fa-solid fa-wifi"></i> En línea
       </span>
     </header>
 
-    <main class="flex-1 overflow-y-auto pb-32 px-5">
+    <main class="flex-1 overflow-y-auto pb-32 px-5 pt-4">
       
-      <div id="api-error-banner" class="hidden mb-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3">
+      <div id="api-error-banner" class="hidden mb-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3 animate-pulse">
         <i class="fa-solid fa-circle-exclamation text-amber-400 text-lg mt-0.5"></i>
         <div class="flex-1">
-          <h4 class="text-xs font-bold text-slate-200">Alerta de Sincronización</h4>
-          <p id="api-error-msg" class="text-[10px] text-slate-400 mt-1">Conexión interrumpida o parcial.</p>
+          <h4 class="text-xs font-bold text-slate-200">Revisar Sincronización</h4>
+          <p id="api-error-msg" class="text-[10px] text-slate-400 mt-1">Sincronizando información parcial. Verifica tu conexión o el estado de tu Google Sheets si esto persiste.</p>
           <button onclick="forzarSincronizacion()" class="mt-2 text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider">Reintentar</button>
         </div>
       </div>
       
       <section id="view-dashboard" class="space-y-5">
-        <div onclick="toggleDesgloseNeto()" class="bg-gradient-to-br from-slate-800 to-slate-800/40 p-6 rounded-3xl border border-slate-700/40 shadow-xl relative overflow-hidden cursor-pointer select-none group active:scale-[0.98] transition-all duration-200">
-          <div class="absolute -right-8 -top-8 text-slate-700/20 group-hover:text-emerald-500/10 transition-colors"><i class="fa-solid fa-wallet text-9xl"></i></div>
+        
+        <div onclick="toggleDesgloseNeto()" class="bg-gradient-to-br from-slate-900 to-slate-950 p-6 rounded-3xl border border-slate-800/80 shadow-xl relative overflow-hidden cursor-pointer select-none group active:scale-[0.98] transition-all duration-200">
+          <div class="absolute -right-8 -top-8 text-slate-800/10 group-hover:text-emerald-500/5 transition-colors">
+            <i class="fa-solid fa-wallet text-9xl"></i>
+          </div>
+          
           <div class="flex justify-between items-center relative z-10">
             <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Saldo Neto Real</h2>
-            <span class="text-[10px] bg-slate-700/50 text-slate-400 px-2.5 py-1 rounded-full flex items-center gap-1 font-bold group-hover:bg-emerald-500/10 group-hover:text-emerald-400 transition-all">
+            <span class="text-[10px] bg-slate-900 text-slate-400 px-2.5 py-1 rounded-full flex items-center gap-1 font-bold group-hover:bg-emerald-500/10 group-hover:text-emerald-400 transition-all border border-slate-800/50">
               <i class="fa-solid fa-chart-line"></i> Desglose <i id="desglose-icon" class="fa-solid fa-chevron-down transition-transform duration-300 ml-0.5"></i>
             </span>
           </div>
-          <div class="flex items-baseline gap-1 relative z-10 mt-1"><span id="dashNeto" class="text-4xl font-black text-emerald-400">$0</span></div>
-          <p class="text-xs text-slate-500 mt-3 relative z-10 flex items-center gap-1.5"><i class="fa-solid fa-shield-halved text-emerald-500"></i> Descontadas las deudas actuales de TC</p>
-          <div id="desglose-compartment" class="max-h-0 opacity-0 overflow-hidden transition-all duration-300 ease-out space-y-3 pt-0 border-t border-slate-700/0 mt-0">
-            <div class="space-y-1.5 pt-2">
-              <span class="text-[9px] text-emerald-400 font-extrabold uppercase tracking-widest flex items-center gap-1"><i class="fa-solid fa-circle-arrow-up"></i> Tus Activos (Billeteras y Ahorros)</span>
-              <div class="flex justify-between text-xs font-semibold text-slate-300 pl-3"><span>Disponible CLP</span><span id="desgloseActivosCLP" class="text-slate-100">$0</span></div>
-              <div class="flex justify-between text-xs font-semibold text-slate-300 pl-3"><span>Disponible USD</span><span id="desgloseActivosUSD">US$ 0 ($0)</span></div>
+
+          <div class="flex items-baseline gap-1 relative z-10 mt-1">
+            <span id="dashNeto" class="text-4xl font-black text-emerald-400">$0</span>
+          </div>
+          
+          <p class="text-xs text-slate-500 mt-3 relative z-10 flex items-center gap-1.5">
+            <i class="fa-solid fa-shield-halved text-emerald-500"></i> Descontadas las deudas actuales de TC
+          </p>
+
+          <div id="desglose-compartment" class="max-h-0 opacity-0 overflow-hidden transition-all duration-300 ease-out space-y-3 pt-0 border-t border-slate-800/0 mt-0">
+            <div class="space-y-1.5 pt-4 border-t border-slate-800/40">
+              <span class="text-[9px] text-emerald-400 font-extrabold uppercase tracking-widest flex items-center gap-1">
+                <i class="fa-solid fa-circle-arrow-up"></i> Tus Activos (Billeteras y Ahorros)
+              </span>
+              <div class="flex justify-between text-xs font-semibold text-slate-300 pl-3">
+                <span>Disponible CLP</span>
+                <span id="desgloseActivosCLP" class="text-slate-100">$0</span>
+              </div>
+              <div class="flex justify-between text-xs font-semibold text-slate-300 pl-3">
+                <span>Disponible USD</span>
+                <span id="desgloseActivosUSD">US$ 0 ($0)</span>
+              </div>
             </div>
+
             <div class="space-y-1.5 pt-1">
-              <span class="text-[9px] text-red-400 font-extrabold uppercase tracking-widest flex items-center gap-1"><i class="fa-solid fa-circle-arrow-down"></i> Tus Pasivos (Deudas en Tarjetas)</span>
-              <div class="flex justify-between text-xs font-semibold text-slate-300 pl-3"><span>Deuda Tarjetas CLP</span><span id="desgloseDeudasCLP" class="text-slate-100">$0</span></div>
-              <div class="flex justify-between text-xs font-semibold text-slate-300 pl-3"><span>Deuda Tarjetas USD</span><span id="desgloseDeudasUSD">US$ 0 ($0)</span></div>
+              <span class="text-[9px] text-red-400 font-extrabold uppercase tracking-widest flex items-center gap-1">
+                <i class="fa-solid fa-circle-arrow-down"></i> Tus Pasivos (Deudas en Tarjetas)
+              </span>
+              <div class="flex justify-between text-xs font-semibold text-slate-300 pl-3">
+                <span>Deuda Tarjetas CLP</span>
+                <span id="desgloseDeudasCLP" class="text-slate-100">$0</span>
+              </div>
+              <div class="flex justify-between text-xs font-semibold text-slate-300 pl-3">
+                <span>Deuda Tarjetas USD</span>
+                <span id="desgloseDeudasUSD">US$ 0 ($0)</span>
+              </div>
             </div>
-            <div class="p-2.5 bg-slate-900/60 rounded-xl border border-slate-800/80 text-[10px] text-slate-400 flex justify-between items-center">
-              <span>Tipo de Cambio USD/CLP:</span><span id="desgloseDolarValor" class="font-extrabold text-emerald-400">$0 CLP</span>
+
+            <div class="p-2.5 bg-slate-950/60 rounded-xl border border-slate-900 text-[10px] text-slate-400 flex justify-between items-center">
+              <span>Tipo de Cambio USD/CLP:</span>
+              <span id="desgloseDolarValor" class="font-extrabold text-emerald-400">$0 CLP</span>
             </div>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-          <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/40 text-center">
+          <div class="bg-slate-900 p-4 rounded-2xl border border-slate-850 text-center shadow-lg">
             <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Deuda TC (CLP)</h3>
             <span id="dashDeudaCLP" class="text-lg font-black text-red-400">$0</span>
           </div>
-          <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/40 text-center">
+          <div class="bg-slate-900 p-4 rounded-2xl border border-slate-850 text-center shadow-lg">
             <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Deuda TC (USD)</h3>
             <span id="dashDeudaUSD" class="text-lg font-black text-red-400">US$ 0</span>
           </div>
         </div>
 
-        <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/40 space-y-3">
+        <div class="bg-slate-900 p-4 rounded-2xl border border-slate-850 space-y-3 shadow-lg">
           <div class="flex justify-between items-center">
-            <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-chart-line text-emerald-400"></i> Comportamiento Mensual</h3>
-            <span class="text-[9px] font-extrabold bg-slate-900 text-slate-400 px-2 py-0.5 rounded-full uppercase">Últimos 6 meses</span>
+            <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-emerald-400"></i> Comportamiento Mensual
+            </h3>
+            <span class="text-[9px] font-extrabold bg-slate-950 text-slate-400 px-2 py-0.5 rounded-full uppercase border border-slate-800">Últimos 6 meses</span>
           </div>
-          <div class="w-full h-44"><canvas id="chartFinanzas"></canvas></div>
+          <div class="w-full h-44">
+            <canvas id="chartFinanzas"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 p-4 rounded-2xl border border-slate-850 space-y-3 shadow-lg">
+          <div class="flex justify-between items-center">
+            <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-chart-pie text-emerald-400"></i> Gastos por Categoría
+            </h3>
+            <span class="text-[9px] font-extrabold bg-slate-955 text-slate-400 px-2 py-0.5 rounded-full uppercase border border-slate-800">Mes Actual</span>
+          </div>
+          <div class="w-full h-44 flex justify-center">
+            <canvas id="chartCategorias"></canvas>
+          </div>
         </div>
 
         <div class="space-y-3">
-          <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2"><i class="fa-solid fa-brain text-emerald-400"></i> Alertas de Inteligencia</h3>
+          <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-brain text-emerald-400"></i> Inteligencia de Saldo
+          </h3>
           <div id="panel-alertas" class="space-y-2.5">
-            <div class="p-4 bg-slate-800/30 rounded-2xl border border-slate-800 text-center text-xs text-slate-500">Analizando tus finanzas...</div>
+            <div class="p-4 bg-slate-900/30 rounded-2xl border border-slate-900 text-center text-xs text-slate-500">
+              Analizando tus finanzas...
+            </div>
           </div>
         </div>
       </section>
 
       <section id="view-movimientos" class="hidden space-y-4">
         <div class="flex justify-between items-center mb-1">
-          <h2 class="text-lg font-extrabold text-white">Historial de Movimientos</h2>
+          <h2 class="text-lg font-extrabold text-white">Historial</h2>
           <span id="historial-total" class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">0 transacciones</span>
         </div>
+
         <div class="space-y-2">
           <div class="relative flex items-center">
             <span class="absolute left-3.5 text-slate-500 text-xs"><i class="fa-solid fa-magnifying-glass"></i></span>
-            <input type="text" id="filtroTexto" oninput="filtrarMovimientos()" class="w-full pl-9 pr-10 py-3 rounded-xl bg-slate-800 border border-slate-700/60 text-xs text-white focus:outline-none focus:border-emerald-500" placeholder="Buscar comercio, detalle o monto...">
-            <button onclick="document.getElementById('filtroTexto').value=''; filtrarMovimientos();" class="absolute right-3 text-slate-500 hover:text-white p-1"><i class="fa-solid fa-circle-xmark"></i></button>
+            <input type="text" id="filtroTexto" oninput="filtrarMovimientos()" class="w-full pl-9 pr-10 py-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-none focus:border-emerald-500" placeholder="Buscar comercio, detalle o monto...">
+            <button onclick="document.getElementById('filtroTexto').value=''; filtrarMovimientos();" class="absolute right-3 text-slate-500 hover:text-white p-1">
+              <i class="fa-solid fa-circle-xmark"></i>
+            </button>
           </div>
           <div class="grid grid-cols-2 gap-2">
-            <select id="filtroCategoria" onchange="filtrarMovimientos()" class="p-3 rounded-xl bg-slate-800 border border-slate-700/60 text-xs text-slate-300 focus:outline-none"><option value="">Todas las Categorías</option></select>
-            <select id="filtroCuenta" onchange="filtrarMovimientos()" class="p-3 rounded-xl bg-slate-800 border border-slate-700/60 text-xs text-slate-300 focus:outline-none"><option value="">Todas las Cuentas</option></select>
+            <select id="filtroCategoria" onchange="filtrarMovimientos()" class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+              <option value="">Todas las Categorías</option>
+            </select>
+            <select id="filtroCuenta" onchange="filtrarMovimientos()" class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+              <option value="">Todas las Cuentas</option>
+            </select>
+          </div>
+          <div class="mt-2">
+            <input type="month" id="filtroMes" onchange="filtrarMovimientos()" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
           </div>
         </div>
+
         <div id="lista-movimientos" class="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
           <p class="text-xs text-slate-500 text-center py-12">Cargando tus movimientos desde Drive...</p>
         </div>
@@ -127,165 +227,231 @@
       <section id="view-cuentas" class="hidden space-y-4">
         <div class="flex justify-between items-center mb-2">
           <h2 class="text-lg font-extrabold text-white">Mis Billeteras</h2>
-          <button onclick="triggerOpenModal('modal-cuenta')" class="text-emerald-400 text-xs font-bold bg-slate-800 border border-slate-700/50 px-3.5 py-2 rounded-full hover:bg-slate-700 transition"><i class="fa-solid fa-plus mr-1"></i> Añadir</button>
+          <button onclick="triggerOpenModal('modal-cuenta')" class="text-emerald-400 text-xs font-bold bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-full hover:bg-slate-850 transition">
+            <i class="fa-solid fa-plus mr-1"></i> Añadir
+          </button>
         </div>
-        <div id="lista-cuentas" class="space-y-3"><p class="text-sm text-slate-500 text-center py-8">Sincronizando cuentas con tu Drive...</p></div>
+        <div id="lista-cuentas" class="space-y-3">
+          <p class="text-sm text-slate-500 text-center py-8">Sincronizando cuentas con tu Drive...</p>
+        </div>
       </section>
 
       <section id="view-ajustes" class="hidden space-y-6">
         <div>
-          <h2 class="text-lg font-extrabold text-white mb-3">Opciones y Base de Datos</h2>
-          <div class="bg-slate-800/60 rounded-2xl border border-slate-700/40 overflow-hidden">
-            <button onclick="forzarSincronizacion()" class="w-full text-left p-4 border-b border-slate-700/40 flex justify-between items-center hover:bg-slate-800 transition">
-              <span class="flex items-center gap-3"><i class="fa-solid fa-arrows-rotate text-emerald-400"></i> Forzar Sincronización</span><i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
+          <h2 class="text-lg font-extrabold text-white mb-3">Accesos Directos</h2>
+          <div class="bg-slate-900 rounded-2xl border border-slate-850 overflow-hidden shadow-lg">
+            <button onclick="forzarSincronizacion()" class="w-full text-left p-4 border-b border-slate-800/80 flex justify-between items-center hover:bg-slate-850 transition">
+              <span class="flex items-center gap-3"><i class="fa-solid fa-arrows-rotate text-emerald-400"></i> Forzar Sincronización</span>
+              <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
             </button>
-            <button onclick="triggerOpenModal('modal-categorias')" class="w-full text-left p-4 border-b border-slate-700/40 flex justify-between items-center hover:bg-slate-800 transition">
-              <span class="flex items-center gap-3"><i class="fa-solid fa-tags text-emerald-400"></i> Gestionar Categorías (Drive)</span><i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
+            <a href="https://docs.google.com/spreadsheets/d/1QWY_Tox9FkGQk1HB8wdaDjxpuH4zHiLJh7G_2cRxTc4" target="_blank" class="w-full text-left p-4 border-b border-slate-800/80 flex justify-between items-center hover:bg-slate-850 transition block">
+              <span class="flex items-center gap-3"><i class="fa-solid fa-file-excel text-emerald-400"></i> Ir a Google Sheets</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-slate-500 text-xs"></i>
+            </a>
+            <button onclick="triggerOpenModal('modal-categorias')" class="w-full text-left p-4 border-b border-slate-800/80 flex justify-between items-center hover:bg-slate-850 transition">
+              <span class="flex items-center gap-3"><i class="fa-solid fa-tags text-emerald-400"></i> Gestionar Categorías (Drive)</span>
+              <i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
             </button>
-            <button onclick="triggerOpenModal('modal-diagnostico'); actualizarDiagnostico();" class="w-full text-left p-4 flex justify-between items-center hover:bg-slate-800 transition">
-              <span class="flex items-center gap-3"><i class="fa-solid fa-toolbox text-amber-400"></i> Diagnosticar Conexión</span><i class="fa-solid fa-chevron-right text-slate-500 text-xs"></i>
-            </button>
+          </div>
+        </div>
+        <p class="text-center text-[10px] text-slate-600">Fluxi App v1.7.0 • Edición Money Manager</p>
+      </section>
+
+    </main>
+
+    <div id="fab-container" class="absolute bottom-20 z-40 transition-all duration-300">
+      <button onclick="abrirModalNuevoMovimiento()" class="bg-emerald-500 hover:bg-emerald-400 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-xl shadow-emerald-500/30 active:scale-90 transition">
+        <i class="fa-solid fa-plus"></i>
+      </button>
+    </div>
+
+    <nav class="flex-none h-16 bg-slate-900/90 backdrop-blur-md border-t border-slate-800/50 grid grid-cols-4 items-center relative z-30">
+      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="text-emerald-400 flex flex-col items-center justify-center h-full gap-1 transition-colors">
+        <i class="fa-solid fa-chart-pie text-lg"></i>
+        <span class="text-[9px] font-bold">Inicio</span>
+      </button>
+
+      <button onclick="switchTab('movimientos')" id="tab-movimientos" class="text-slate-500 hover:text-slate-300 flex flex-col items-center justify-center h-full gap-1 transition-colors">
+        <i class="fa-solid fa-list-check text-lg"></i>
+        <span class="text-[9px] font-bold">Movimientos</span>
+      </button>
+
+      <button onclick="switchTab('cuentas')" id="tab-cuentas" class="text-slate-500 hover:text-slate-300 flex flex-col items-center justify-center h-full gap-1 transition-colors">
+        <i class="fa-solid fa-wallet text-lg"></i>
+        <span class="text-[9px] font-bold">Cuentas</span>
+      </button>
+
+      <button onclick="switchTab('ajustes')" id="tab-ajustes" class="text-slate-500 hover:text-slate-300 flex flex-col items-center justify-center h-full gap-1 transition-colors">
+        <i class="fa-solid fa-sliders text-lg"></i>
+        <span class="text-[9px] font-bold">Ajustes</span>
+      </button>
+    </nav>
+
+    <div id="modal-movimiento" class="hidden absolute inset-0 bg-slate-950 z-50 flex flex-col modal-slide-up modal-hidden">
+      <header class="flex justify-between items-center p-5 border-b border-slate-900">
+        <h2 id="movimiento-modal-title" class="text-lg font-bold text-white">Nuevo Movimiento</h2>
+        <button type="button" onclick="triggerCloseModal('modal-movimiento')" class="w-8 h-8 bg-slate-900 rounded-full flex justify-center items-center text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+      
+      <form id="movForm" class="flex-1 overflow-y-auto p-5 space-y-4">
+        <input type="hidden" id="editingId" value="">
+
+        <div id="contenedor-importador-notif" class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800/80 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] text-emerald-400 font-extrabold uppercase tracking-wider flex items-center gap-1">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Lector Rápido
+            </span>
+            <span class="text-[9px] text-slate-500">Google Wallet / SMS</span>
+          </div>
+          <textarea id="importText" rows="2" class="w-full p-3 bg-slate-950 border border-slate-850 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-emerald-500" placeholder="Pega el mensaje de tu banco aquí..."></textarea>
+          <button type="button" onclick="procesarNotificacionPegada()" class="w-full py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 rounded-xl text-xs font-bold text-emerald-400 transition">
+            Autocompletar Formulario
+          </button>
+        </div>
+
+        <div class="flex p-1 bg-slate-900 rounded-lg mb-2 border border-slate-800/60">
+          <button type="button" onclick="setTipoMov('Egreso')" id="btn-egreso" class="flex-1 py-2 text-xs font-bold bg-slate-800 text-white rounded-md shadow">Gasto</button>
+          <button type="button" onclick="setTipoMov('Ingreso')" id="btn-ingreso" class="flex-1 py-2 text-xs font-bold text-slate-400 hover:text-white rounded-md">Ingreso</button>
+          <button type="button" onclick="setTipoMov('Transferencia')" id="btn-transfer" class="flex-1 py-2 text-xs font-bold text-slate-400 hover:text-white rounded-md">Transferencia</button>
+        </div>
+        <input type="hidden" id="movTipo" value="Egreso">
+
+        <div>
+          <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Monto</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl font-bold">$</span>
+            <input type="number" id="movMonto" class="w-full pl-10 p-4 rounded-xl bg-slate-900 border border-slate-800 text-white text-xl font-bold focus:outline-none focus:border-emerald-500" placeholder="0" required>
           </div>
         </div>
 
         <div>
-          <h2 class="text-lg font-extrabold text-white mb-3">Diseño e Interfaz</h2>
-          <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/40 space-y-3">
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Posición del Botón "+"</span>
-            <div class="grid grid-cols-3 gap-2 p-1 bg-slate-900 rounded-xl border border-slate-800">
-              <button onclick="setFabPosition('left')" id="btn-fab-left" class="py-2.5 rounded-lg text-xs font-bold transition">Izquierda</button>
-              <button onclick="setFabPosition('center')" id="btn-fab-center" class="py-2.5 rounded-lg text-xs font-bold transition">Centro</button>
-              <button onclick="setFabPosition('right')" id="btn-fab-right" class="py-2.5 rounded-lg text-xs font-bold transition">Derecha</button>
+          <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Descripción / Comercio</label>
+          <input type="text" id="movDesc" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="Ej: Supermercado Lider..." required>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Fecha</label>
+            <input type="date" id="movFecha" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" required>
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Recurrencia</label>
+            <select id="movFrecuencia" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
+              <option value="Unica vez">Única vez</option>
+              <option value="Mensual">Mensual</option>
+              <option value="Quincenal">Quincenal</option>
+              <option value="Semanal">Semanal</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label id="lbl-mov-cuenta" class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Billetera / Origen</label>
+            <select id="movCuenta" onchange="verificarTipoCuenta()" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium"></select>
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Moneda</label>
+            <select id="movMoneda" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
+              <option value="CLP">CLP</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="seccion-cuenta-destino" class="hidden">
+          <label class="text-[10px] text-emerald-400 font-extrabold uppercase mb-1 block tracking-wider">Billetera Destino</label>
+          <select id="movCuentaDestino" class="w-full p-4 rounded-xl bg-slate-900 border border-emerald-500/30 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium"></select>
+        </div>
+
+        <div id="seccion-cuotas" class="hidden p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-3">
+          <div class="flex items-center gap-2 text-emerald-400">
+            <i class="fa-solid fa-credit-card"></i>
+            <span class="text-xs font-bold uppercase tracking-wider">Opciones de Crédito</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block mb-1">N° Cuotas</label>
+              <input type="number" id="movCuotas" min="1" max="48" class="w-full p-3 rounded-lg bg-slate-950 border border-slate-800 text-white text-xs" value="1">
+            </div>
+            <div>
+              <label class="text-[9px] text-slate-400 font-extrabold uppercase tracking-wider block mb-1">Costo de Cuota</label>
+              <div id="calculo-cuota" class="text-xs font-bold text-slate-300 pt-3">$0 / mes</div>
             </div>
           </div>
         </div>
-        <p class="text-center text-[10px] text-slate-600">Fluxi App v1.9.7 • Desarrollado a Medida</p>
-      </section>
-    </main>
 
-    <div id="fab-container" class="absolute bottom-20 z-40 transition-all duration-300">
-      <button onclick="abrirModalNuevoMovimiento()" class="bg-emerald-500 hover:bg-emerald-400 text-white w-14 h-14 rounded-full flex items-center justify-center text-2xl shadow-xl shadow-emerald-500/30 active:scale-90 transition"><i class="fa-solid fa-plus"></i></button>
+        <div id="seccion-categoria">
+          <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Categoría</label>
+          <select id="movCat" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
+          </select>
+        </div>
+
+        <button id="movForm-submit-btn" type="submit" class="w-full bg-emerald-500 text-white font-black text-sm uppercase tracking-wider p-4 rounded-xl mt-4 hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20">
+          Confirmar Transacción
+        </button>
+      </form>
     </div>
-    <nav class="flex-none h-16 bg-slate-800/90 backdrop-blur-md border-t border-slate-700/35 grid grid-cols-4 items-center relative z-30">
-      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="text-emerald-400 flex flex-col items-center justify-center h-full gap-1 transition-colors"><i class="fa-solid fa-chart-pie text-lg"></i><span class="text-[9px] font-bold">Inicio</span></button>
-      <button onclick="switchTab('movimientos')" id="tab-movimientos" class="text-slate-500 hover:text-slate-300 flex flex-col items-center justify-center h-full gap-1 transition-colors"><i class="fa-solid fa-list-check text-lg"></i><span class="text-[9px] font-bold">Movimientos</span></button>
-      <button onclick="switchTab('cuentas')" id="tab-cuentas" class="text-slate-500 hover:text-slate-300 flex flex-col items-center justify-center h-full gap-1 transition-colors"><i class="fa-solid fa-wallet text-lg"></i><span class="text-[9px] font-bold">Cuentas</span></button>
-      <button onclick="switchTab('ajustes')" id="tab-ajustes" class="text-slate-500 hover:text-slate-300 flex flex-col items-center justify-center h-full gap-1 transition-colors"><i class="fa-solid fa-sliders text-lg"></i><span class="text-[9px] font-bold">Ajustes</span></button>
-    </nav>
 
-    <div id="modal-movimiento" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up modal-hidden">
-      <header class="flex justify-between items-center p-5 border-b border-slate-800">
-        <h2 id="movimiento-modal-title" class="text-lg font-bold text-white">Nuevo Movimiento</h2>
-        <button type="button" onclick="triggerCloseModal('modal-movimiento')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <div id="modal-cuenta" class="hidden absolute inset-0 bg-slate-950 z-50 flex flex-col modal-slide-up modal-hidden">
+      <header class="flex justify-between items-center p-5 border-b border-slate-900">
+        <h2 class="text-lg font-bold text-white">Nueva Billetera</h2>
+        <button type="button" onclick="triggerCloseModal('modal-cuenta')" class="w-8 h-8 bg-slate-900 rounded-full flex justify-center items-center text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </header>
-      <form id="movForm" class="flex-1 overflow-y-auto p-5 space-y-4">
-        <input type="hidden" id="editingId" value="">
-        <div id="contenedor-importador-notif" class="bg-slate-800/40 p-4 rounded-2xl border border-slate-700/45 space-y-2">
-          <div class="flex justify-between items-center"><span class="text-[10px] text-emerald-400 font-extrabold uppercase tracking-wider flex items-center gap-1"><i class="fa-solid fa-wand-magic-sparkles"></i> Lector Pegado Rápido</span><span class="text-[9px] text-slate-500">Wallet / SMS</span></div>
-          <textarea id="importText" rows="2" class="w-full p-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 text-xs focus:outline-none focus:border-emerald-500" placeholder="Pega el mensaje de tu banco aquí..."></textarea>
-          <button type="button" onclick="procesarNotificacionPegada()" class="w-full py-2 bg-slate-800 hover:bg-slate-750 border border-slate-700/40 rounded-xl text-xs font-bold text-emerald-400 transition">Autocompletar</button>
+      
+      <form id="cuentaForm" class="flex-1 overflow-y-auto p-5 space-y-4">
+        <div>
+          <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Nombre de la Cuenta</label>
+          <input type="text" id="accName" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" required>
         </div>
-        <div class="flex p-1 bg-slate-800 rounded-lg mb-2 border border-slate-700/30">
-          <button type="button" onclick="setTipoMov('Egreso')" id="btn-egreso" class="flex-1 py-2 text-xs font-bold bg-slate-700 text-white rounded-md shadow">Gasto</button>
-          <button type="button" onclick="setTipoMov('Ingreso')" id="btn-ingreso" class="flex-1 py-2 text-xs font-bold text-slate-400 hover:text-white rounded-md">Ingreso</button>
-          <button type="button" onclick="setTipoMov('Transferencia')" id="btn-transfer" class="flex-1 py-2 text-xs font-bold text-slate-400 hover:text-white rounded-md">Transfer</button>
-        </div>
-        <input type="hidden" id="movTipo" value="Egreso">
-        <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Monto</label>
-          <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl font-bold">$</span><input type="number" id="movMonto" class="w-full pl-10 p-4 rounded-xl bg-slate-800 border border-slate-700 text-white text-xl font-bold focus:outline-none focus:border-emerald-500" placeholder="0" required></div>
-        </div>
-        <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Descripción</label><input type="text" id="movDesc" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="Ej: Comercio..." required></div>
+
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Fecha</label><input type="date" id="movFecha" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" required></div>
-          <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Frecuencia</label><select id="movFrecuencia" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm"><option value="Unica vez">Única vez</option><option value="Mensual">Mensual</option><option value="Quincenal">Quincenal</option><option value="Semanal">Semanal</option></select></div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Billetera</label><select id="movCuenta" onchange="verificarTipoCuenta()" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm"></select></div>
-          <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Moneda</label><select id="movMoneda" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm"><option value="CLP">CLP</option><option value="USD">USD</option></select></div>
-        </div>
-        <div id="seccion-cuotas" class="hidden p-4 bg-slate-800/40 rounded-xl border border-slate-700/50 space-y-3">
-          <div class="flex items-center gap-2 text-emerald-400"><i class="fa-solid fa-credit-card"></i><span class="text-xs font-bold uppercase">Opciones de Crédito</span></div>
-          <div class="grid grid-cols-2 gap-3">
-            <div><label class="text-[9px] text-slate-400 font-extrabold uppercase block mb-1">N° Cuotas</label><input type="number" id="movCuotas" min="1" max="48" class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs" value="1"></div>
-            <div><label class="text-[9px] text-slate-400 font-extrabold uppercase block mb-1">Costo de Cuota</label><div id="calculo-cuota" class="text-xs font-bold text-slate-300 pt-3">$0 / mes</div></div>
+          <div>
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Tipo</label>
+            <select id="accType" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
+              <option value="Debito">Débito</option>
+              <option value="Credito">Crédito</option>
+              <option value="Inversion">Inversión</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Moneda Base</label>
+            <select id="accCurrency" class="w-full p-4 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium">
+              <option value="CLP">CLP</option>
+              <option value="USD">USD</option>
+            </select>
           </div>
         </div>
-        <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Categoría</label><select id="movCat" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm"></select></div>
-        <button id="movForm-submit-btn" type="submit" class="w-full bg-emerald-500 text-white font-black text-sm uppercase p-4 rounded-xl mt-4 hover:bg-emerald-400 transition">Confirmar Transacción</button>
+
+        <div>
+          <label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block tracking-wider">Saldo Inicial (o Cupo en TC)</label>
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+            <input type="number" id="accLimit" class="w-full pl-8 p-4 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="0" required>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full bg-slate-800 hover:bg-slate-750 text-white font-extrabold text-sm uppercase tracking-wider p-4 rounded-xl mt-4 transition border border-slate-700/50">
+          Habilitar Billetera
+        </button>
       </form>
     </div>
 
-    <div id="modal-cuenta" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up modal-hidden">
-      <header class="flex justify-between items-center p-5 border-b border-slate-800">
-        <h2 class="text-lg font-bold text-white">Nueva Billetera</h2>
-        <button type="button" onclick="triggerCloseModal('modal-cuenta')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </header>
-      <form id="cuentaForm" class="flex-1 overflow-y-auto p-5 space-y-4">
-        <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Nombre Cuenta</label><input type="text" id="accName" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" required></div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Tipo</label><select id="accType" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm"><option value="Debito">Débito</option><option value="Credito">Crédito</option><option value="Inversion">Inversión</option></select></div>
-          <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Moneda</label><select id="accCurrency" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm"><option value="CLP">CLP</option><option value="USD">USD</option></select></div>
-        </div>
-        <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Saldo Inicial / Cupo</label>
-          <div class="relative"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span><input type="number" id="accLimit" class="w-full pl-8 p-4 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500 text-sm font-medium" placeholder="0" required></div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Día Corte (TC)</label><input type="number" id="accCorte" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm"></div>
-          <div><label class="text-[10px] text-slate-400 font-extrabold uppercase mb-1 block">Día Pago (TC)</label><input type="number" id="accPago" class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm"></div>
-        </div>
-        <button type="submit" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-extrabold text-sm uppercase p-4 rounded-xl mt-4 transition">Habilitar Billetera</button>
-      </form>
-    </div>
-
-    <div id="modal-categorias" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up modal-hidden">
-      <header class="flex justify-between items-center p-5 border-b border-slate-800">
+    <div id="modal-categorias" class="hidden absolute inset-0 bg-slate-950 z-50 flex flex-col modal-slide-up modal-hidden">
+      <header class="flex justify-between items-center p-5 border-b border-slate-900">
         <h2 class="text-lg font-bold text-white">Categorías en Drive</h2>
-        <button type="button" onclick="triggerCloseModal('modal-categorias')" class="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" onclick="triggerCloseModal('modal-categorias')" class="w-8 h-8 bg-slate-900 rounded-full flex justify-center items-center text-slate-400"><i class="fa-solid fa-xmark"></i></button>
       </header>
       <div class="flex-1 overflow-y-auto p-5 space-y-6">
         <div class="flex gap-2">
-          <input type="text" id="catNuevaNombre" class="flex-1 p-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm" placeholder="Nueva categoría...">
+          <input type="text" id="catNuevaNombre" class="flex-1 p-3 rounded-xl bg-slate-900 border border-slate-800 text-white text-sm focus:outline-none focus:border-emerald-500" placeholder="Nueva categoría...">
           <button onclick="agregarNuevaCategoriaDrive()" class="bg-emerald-500 text-white px-4 rounded-xl font-bold"><i class="fa-solid fa-plus"></i></button>
         </div>
         <div id="lista-categorias-admin" class="space-y-2"></div>
-      </div>
-    </div>
-
-    <div id="modal-diagnostico" class="hidden absolute inset-0 bg-slate-900 z-50 flex flex-col modal-slide-up modal-hidden">
-      <header class="flex justify-between items-center p-5 border-b border-slate-800">
-        <h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-stethoscope text-amber-400"></i> Panel de Diagnóstico</h2>
-        <button type="button" onclick="triggerCloseModal('modal-diagnostico')" class="w-8 h-8 bg-slate-800 rounded-full flex justify-center items-center text-slate-400"><i class="fa-solid fa-xmark"></i></button>
-      </header>
-      <div class="flex-1 overflow-y-auto p-5 space-y-4">
-        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/40 space-y-2">
-          <h3 class="text-xs font-bold text-slate-400 uppercase">Estado de Red</h3>
-          <p class="text-sm"><span class="font-bold">Online:</span> <span id="diag-online" class="text-emerald-400">Verificando...</span></p>
-          <p class="text-sm"><span class="font-bold">Último Sync:</span> <span id="diag-lastsync" class="text-slate-300">Nunca</span></p>
-        </div>
-        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/40 space-y-2">
-          <h3 class="text-xs font-bold text-slate-400 uppercase">Configuración API</h3>
-          <p class="text-sm"><span class="font-bold">URL Base:</span> <span id="diag-apiurl" class="text-slate-300 text-[10px] break-all">Cargando...</span></p>
-          <p class="text-sm"><span class="font-bold">Token:</span> <span id="diag-token" class="text-slate-300">●●●●●●●</span></p>
-        </div>
-        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/40 space-y-2">
-          <h3 class="text-xs font-bold text-slate-400 uppercase">Datos en Memoria</h3>
-          <p class="text-sm"><span class="font-bold">Cuentas:</span> <span id="diag-cuentas" class="text-emerald-400">0</span></p>
-          <p class="text-sm"><span class="font-bold">Movimientos:</span> <span id="diag-movimientos" class="text-emerald-400">0</span></p>
-          <p class="text-sm"><span class="font-bold">Categorías:</span> <span id="diag-categorias" class="text-emerald-400">0</span></p>
-        </div>
-        <button onclick="actualizarDiagnostico()" class="w-full bg-emerald-500 text-white font-bold py-2 rounded-xl hover:bg-emerald-400 transition"><i class="fa-solid fa-rotate"></i> Actualizar Diagnóstico</button>
-      </div>
-    </div>
-
-    <div id="toast-container" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none space-y-2"></div>
-    <div id="modal-confirm" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-      <div class="bg-slate-900 p-6 rounded-2xl border border-slate-700 max-w-xs shadow-xl">
-        <h3 id="confirm-title" class="text-lg font-bold text-white mb-2">Confirmar</h3>
-        <p id="confirm-message" class="text-sm text-slate-300 mb-4"></p>
-        <div class="flex gap-3 justify-end">
-          <button onclick="cerrarConfirm(false)" class="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition">Cancelar</button>
-          <button id="confirm-btn" onclick="cerrarConfirm(true)" class="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-400 transition">Confirmar</button>
-        </div>
       </div>
     </div>
 
